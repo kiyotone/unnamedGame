@@ -10,6 +10,9 @@ class Entity:
         self.left = self.image.x
         self.top = self.image.y + self.image.height
         self.bottom = self.image.y
+        self.can_wall_hop = False
+        self.wall_touching = False
+        
         
 
     def draw(self):
@@ -31,12 +34,30 @@ class Entity:
         self.image.y += 1
         if on_ground:
             self.jump_count = 0
+            self.can_wall_hop = True
         return on_ground
+    
+    def is_on_wall(self):
+        # Check collision when moved left
+        self.image.x -= 1
+        on_wall_left = any(self.colliderect(platform) for platform in self.game.platform_array)
+        self.image.x += 1  # Reset position
+
+        # Check collision when moved right
+        self.image.x += 1
+        on_wall_right = any(self.colliderect(platform) for platform in self.game.platform_array)
+        self.image.x -= 1  # Reset position
+
+        # Return if either collision check is true
+        return on_wall_left or on_wall_right
+
     
 
     def update(self, dt):
         if not self.is_on_ground() :
-            self.velocity.y += self.gravity
+            # add max fall cap
+            if self.velocity.y > -200:
+                self.velocity.y += self.gravity
             
         self.image.x += self.velocity.x * dt
         self.handle_collision(self.velocity.x, 0)
@@ -53,7 +74,7 @@ class Entity:
                     self.image.x = platform.image.x + platform.image.width
                 elif dy > 0:  # Moving down
                     self.image.y = platform.image.y - self.image.height
+                    self.velocity.y = 0
                 elif dy < 0:  # Moving up
                     self.image.y = platform.image.y + platform.image.height
-                    self.velocity.y = 0
-
+                    

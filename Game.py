@@ -59,7 +59,7 @@ class Game:
         for i in range(10):
             x = random.randint(0, 750)
             y = random.randint(0, 590)
-            width = random.randint(32, 128)
+            width = random.randint(32, 256)
             platform = Platform(x, y, width, 32)
             self.platform_array.append(platform)
             
