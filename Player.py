@@ -11,30 +11,68 @@ class Player(Entity):
         self.move_left = False
         self.move_right = False
         self.image = pyglet.shapes.Rectangle(x, y, 20, 20, color=(255, 0, 0))
+        
+        #Animations
+        self.idle_frames = []
+        self.run_frames = []
+        self.jump_frames = []
 
         self.load_images()
         self.current_frame = 0
-        self.animation = pyglet.image.Animation.from_image_sequence(
-            self.idle_frames, duration=0.1, loop=True
+        self.time_since_last_frame = 0
+        self.frame_duration = 1 / 60  # 60 fps
+        
+        self.idle_animation = pyglet.image.Animation.from_image_sequence(
+            self.idle_frames, duration=.2, loop=True
         )
+        
+        self.run_animation = pyglet.image.Animation.from_image_sequence(
+            self.run_frames, duration=.2, loop=True
+        )
+        
+        self.jump_animation = pyglet.image.Animation.from_image_sequence(
+            self.jump_frames, duration=.05, loop=False
+        )
+        
+        
         # Create sprite with animation
-        self.sprite = pyglet.sprite.Sprite(self.animation, x=self.image.x, y=self.image.y)
+        self.sprite = pyglet.sprite.Sprite(self.idle_animation, x=self.image.x, y=self.image.y)
         self.sprite.anchor_x = self.sprite.width // 2
-        self.sprite.anchor_y = 0 
-    
+        self.sprite.anchor_y = 0       
+        #States
+        self.moving = False
+        self.jumping = False
+        self.falling = False
+
+        
+      
     
     def draw(self):
-        self.image.draw() 
+        # self.image.draw() 
         self.sprite.draw() 
         
     def load_images(self):
         # Load each image
-        self.idle_frames = []
+        
         for i in range(4):
             image = pyglet.image.load(f'assets/idle/adventurer{i+1}.png')
             image.anchor_x = image.width // 2
             image.anchor_y = image.height // 2
             self.idle_frames.append(image)
+        
+        for i in range(6):
+            image = pyglet.image.load(f'assets/run/adventurer{i+1}.png')
+            image.anchor_x = image.width // 2
+            image.anchor_y = image.height // 2
+            self.run_frames.append(image)
+        
+        for i in range(4):
+            image = pyglet.image.load(f'assets/jump/adventurer{i+1}.png')
+            image.anchor_x = image.width // 2
+            image.anchor_y = image.height // 2
+            self.jump_frames.append(image)
+        
+        
         
     
     def collide(self, dx: int, dy: int):
@@ -91,3 +129,31 @@ class Player(Entity):
         self.player_input()
         if self.is_on_ground():
             self.jump_count = 0  # Reset jump count when on the ground
+        self.state_manager()
+        self.animation_manager(dt)
+    
+    def state_manager(self):
+        if self.velocity.x != 0:
+            self.moving = True
+        else:
+            self.moving = False
+        if self.velocity.y > 0:
+            self.jumping = True
+            
+        else:
+            self.jumping = False
+            
+    def animation_manager(self, dt):
+        print(self.jumping, self.falling, self.moving)
+        
+        if not self.jumping and not self.falling and self.moving:
+            if self.sprite.image != self.run_animation:                
+                self.sprite.image = self.run_animation
+        
+        if not self.moving and not self.jumping and not self.falling:
+            if self.sprite.image != self.idle_animation:
+                self.sprite.image = self.idle_animation
+                
+        if self.jumping:
+            if self.sprite.image != self.jump_animation:
+                self.sprite.image = self.jump_animation
