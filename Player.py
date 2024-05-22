@@ -16,11 +16,13 @@ class Player(Entity):
         self.idle_frames = []
         self.run_frames = []
         self.jump_frames = []
+        self.fall_frames = []
 
         self.load_images()
         self.current_frame = 0
         self.time_since_last_frame = 0
         self.frame_duration = 1 / 60  # 60 fps
+        
         
         self.idle_animation = pyglet.image.Animation.from_image_sequence(
             self.idle_frames, duration=.2, loop=True
@@ -34,6 +36,9 @@ class Player(Entity):
             self.jump_frames, duration=.05, loop=False
         )
         
+        self.fall_animation = pyglet.image.Animation.from_image_sequence(
+            self.fall_frames, duration=.05, loop=True
+        )
         
         # Create sprite with animation
         self.sprite = pyglet.sprite.Sprite(self.idle_animation, x=self.image.x, y=self.image.y)
@@ -72,7 +77,11 @@ class Player(Entity):
             image.anchor_y = image.height // 2
             self.jump_frames.append(image)
         
-        
+        for i in range(2):
+            image = pyglet.image.load(f'assets/fall/adventurer{i+1}.png')
+            image.anchor_x = image.width // 2
+            image.anchor_y = image.height // 2
+            self.fall_frames.append(image)
         
     
     def collide(self, dx: int, dy: int):
@@ -117,15 +126,21 @@ class Player(Entity):
             self.velocity.x = 100
             if self.sprite.scale_x < 0:
                 self.sprite.scale_x = -self.sprite.scale_x
+        
+        
     
     def is_on_ground(self):
-        super().is_on_ground()
+        return super().is_on_ground()
+        
     
     def update(self, dt):
         super().update(dt)
+        
+        self.image.height = self.sprite.height
+        
         # Center the sprite based on the image's position
         self.sprite.x = self.image.x + self.image.width // 2
-        self.sprite.y = self.image.y - self.image.height + self.sprite.height
+        self.sprite.y = self.image.y + self.image.height // 2
         self.player_input()
         if self.is_on_ground():
             self.jump_count = 0  # Reset jump count when on the ground
@@ -137,14 +152,21 @@ class Player(Entity):
             self.moving = True
         else:
             self.moving = False
-        if self.velocity.y > 0:
-            self.jumping = True
-            
+        
+        
+        if not self.is_on_ground():
+            if self.velocity.y > 0:
+                self.jumping = True
+                self.falling = False            
+            else:
+                self.jumping = False
+                self.falling = True
         else:
             self.jumping = False
+            self.falling = False
             
     def animation_manager(self, dt):
-        print(self.jumping, self.falling, self.moving)
+        # print(self.jumping, self.falling, self.moving)
         
         if not self.jumping and not self.falling and self.moving:
             if self.sprite.image != self.run_animation:                
@@ -157,3 +179,7 @@ class Player(Entity):
         if self.jumping:
             if self.sprite.image != self.jump_animation:
                 self.sprite.image = self.jump_animation
+        
+        if self.falling:
+            if self.sprite.image != self.fall_animation:
+                self.sprite.image = self.fall_animation

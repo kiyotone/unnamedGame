@@ -1,4 +1,5 @@
 import pyglet   # type: ignore
+import random
 
 class Entity:
     def __init__(self, x: int, y: int, game):
@@ -12,6 +13,7 @@ class Entity:
         self.bottom = self.image.y
         self.can_wall_hop = False
         self.wall_touching = False
+        
         
         
 
@@ -35,6 +37,7 @@ class Entity:
         if on_ground:
             self.jump_count = 0
             self.can_wall_hop = True
+            
         return on_ground
     
     def is_on_wall(self):
@@ -63,6 +66,12 @@ class Entity:
         self.handle_collision(self.velocity.x, 0)
         self.image.y += self.velocity.y * dt
         self.handle_collision(0, self.velocity.y)
+
+
+    
+    def random_movement(self):
+        self.image.x += random.randint(-1, 1)
+        self.image.y += random.randint(-1, 1)
                 
 
     def handle_collision(self, dx, dy):

@@ -2,11 +2,12 @@ import pyglet # type: ignore
 import sys
 import random
 from Platform import Platform
-from Entity import Entity
+from Enemy import Enemy
 from Player import Player
 
 class Game:
     def __init__(self):
+        self.time_passed = 0
         self.window = pyglet.window.Window(800, 600) 
         self.platform_array = []
         self.entities = []
@@ -40,8 +41,8 @@ class Game:
         for i in range(20):
             x = random.randint(0, 750)  # Ensure platforms fit within the window width
             y = random.randint(0, 590)
-            entity = Entity(x, y, self)
-            self.entities.append(entity)
+            enemy = Enemy(x, y, self)
+            self.entities.append(enemy)
 
     
     def generate_platforms(self):
@@ -70,13 +71,15 @@ class Game:
         for platform in self.platform_array:
             platform.draw()
         
-        for entity in self.entities:
-            entity.draw()
+        for enemy in self.entities:
+            enemy.draw()
     
     def update(self, dt):
+        print(self.time_passed)
+        self.time_passed += dt
         self.player.update(dt)
-        for entity in self.entities:
-            entity.update(dt)
+        for enemy in self.entities:
+            enemy.update(dt)
         
     def run(self):
         self.generate_platforms()
