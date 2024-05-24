@@ -1,30 +1,16 @@
-import pyglet # type: ignore
+import pygame # type: ignore
 import random
 
 
 class Platform():
-    def __init__(self, x, y, w, h):
-        self.image = pyglet.shapes.Rectangle(x, y, w, h, color=(0, 255, 0))
-        self.rect = self.image.x, self.image.y, self.image.width, self.image.height
-
+    def __init__(self, x, y, w, h ,game):
+        self.image = pygame.Surface((w, h))
+        self.image.fill((255, 255, 255))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.game = game
+   
     def update(self):
         pass
     
     def draw(self):
-        self.image.draw()
-    
-    @property    
-    def left(self):
-        return self.image.x
-
-    @property
-    def right(self):
-        return self.image.x + self.image.width
-
-    @property
-    def top(self):
-        return self.image.y + self.image.height
-
-    @property
-    def bottom(self):
-        return self.image.y
+        self.game.window.blit(self.image, self.rect)

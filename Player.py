@@ -1,18 +1,19 @@
-import pyglet  # type: ignore
+import pygame
 from Entity import Entity
 
 class Player(Entity):
     def __init__(self, x: int, y: int, game):
         super().__init__(x, y, game)
-        self.jump_strength = 200  # Jump force
+        self.jump_strength = 10  # Jump force
         self.jump_count = 0  # Number of jumps made
         self.jump_pressed = False  # If the jump key is pressed
-        self.image.color = (255, 0, 0)  # Change the player color to red
-        self.move_left = False
-        self.move_right = False
-        self.image = pyglet.shapes.Rectangle(x, y, 20, 20, color=(255, 0, 0))
+        self.image = pygame.Surface((20, 20))  # Create a surface for the player's image
+        self.image.fill((255, 0, 0))  # Fill the surface with red color
+        self.rect = self.image.get_rect(topleft=(x, y))  # Set initial position
+        self.hit_rect = pygame.Rect(0, 0, 20, 20)
+        self.facing_left = False
         
-        #Animations
+        # Animations
         self.idle_frames = []
         self.run_frames = []
         self.jump_frames = []
@@ -21,165 +22,110 @@ class Player(Entity):
         self.load_images()
         self.current_frame = 0
         self.time_since_last_frame = 0
-        self.frame_duration = 1 / 60  # 60 fps
+        self.frame_duration = 0.1
+        self.current_animation = self.idle_frames
         
+        self.velocity = pygame.math.Vector2(0, 0)
         
-        self.idle_animation = pyglet.image.Animation.from_image_sequence(
-            self.idle_frames, duration=.2, loop=True
-        )
-        
-        self.run_animation = pyglet.image.Animation.from_image_sequence(
-            self.run_frames, duration=.2, loop=True
-        )
-        
-        self.jump_animation = pyglet.image.Animation.from_image_sequence(
-            self.jump_frames, duration=.05, loop=False
-        )
-        
-        self.fall_animation = pyglet.image.Animation.from_image_sequence(
-            self.fall_frames, duration=.05, loop=True
-        )
-        
-        # Create sprite with animation
-        self.sprite = pyglet.sprite.Sprite(self.idle_animation, x=self.image.x, y=self.image.y)
-        self.sprite.anchor_x = self.sprite.width // 2
-        self.sprite.anchor_y = 0       
-        #States
-        self.moving = False
-        self.jumping = False
-        self.falling = False
-
-        
-      
-    
     def draw(self):
-        # self.image.draw() 
-        self.sprite.draw() 
+        self.game.window.blit(self.image, self.rect)
+        pygame.draw.rect(self.game.window, (0, 255, 0), self.hit_rect, 2)
         
     def load_images(self):
         # Load each image
-        
         for i in range(4):
-            image = pyglet.image.load(f'assets/idle/adventurer{i+1}.png')
-            image.anchor_x = image.width // 2
-            image.anchor_y = image.height // 2
+            image = pygame.image.load(f'assets/idle/adventurer{i+1}.png').convert_alpha()
             self.idle_frames.append(image)
         
         for i in range(6):
-            image = pyglet.image.load(f'assets/run/adventurer{i+1}.png')
-            image.anchor_x = image.width // 2
-            image.anchor_y = image.height // 2
+            image = pygame.image.load(f'assets/run/adventurer{i+1}.png').convert_alpha()
             self.run_frames.append(image)
         
         for i in range(4):
-            image = pyglet.image.load(f'assets/jump/adventurer{i+1}.png')
-            image.anchor_x = image.width // 2
-            image.anchor_y = image.height // 2
+            image = pygame.image.load(f'assets/jump/adventurer{i+1}.png').convert_alpha()
             self.jump_frames.append(image)
         
         for i in range(2):
-            image = pyglet.image.load(f'assets/fall/adventurer{i+1}.png')
-            image.anchor_x = image.width // 2
-            image.anchor_y = image.height // 2
+            image = pygame.image.load(f'assets/fall/adventurer{i+1}.png').convert_alpha()
             self.fall_frames.append(image)
         
-    
-    def collide(self, dx: int, dy: int):
-        return super().collide(dx, dy)
-    
-    def is_on_ground():
-        super().is_on_ground()
-    
-    def on_key_press(self, symbol, modifiers):
-        if symbol == pyglet.window.key.SPACE:
-            self.jump()
-        if symbol == pyglet.window.key.LEFT:
-            self.move_left = True  # Increase velocity towards left
-        if symbol == pyglet.window.key.RIGHT:
-            self.move_right = True
-            
-    def on_key_release(self, symbol, modifiers):
-        if symbol == pyglet.window.key.LEFT:
-            self.move_left = False
-        if symbol == pyglet.window.key.RIGHT:
-            self.move_right = False
+        self.rect = self.idle_frames[0].get_rect(topleft=(self.rect.x, self.rect.y))
+        # Set the hit rect to match the player's rect
+        self.hit_rect = self.rect.copy()
+
+        
         
     def jump(self):
-        if self.is_on_ground():  # First jump
-            self.velocity.y = self.jump_strength  # Apply upward force for jump
-            self.jump_count = 1  # Reset jump count to 1 after the first jump
-        elif self.jump_count < 1:  # Double jump
-            self.velocity.y = self.jump_strength
-            self.jump_count += 1  # Increment the jump count
-        elif self.can_wall_hop and self.is_on_wall() and not self.is_on_ground():
-            self.velocity.y = self.jump_strength
-            self.velocity.x = self.velocity.x * -1
-            self.can_wall_hop = False
-
+        if self.is_on_ground():  # First jump            
+            self.velocity.y = -self.jump_strength
+            self.jump_count = 1
+        elif self.can_wall_hop and self.is_on_wall():  # Wall hop
+            self.velocity.y = -self.jump_strength
+            self.velocity.x = -self.velocity.x  # Reverse direction
+            self.jump_count = 1
+        elif self.jump_count < 2:  # Double jump
+            self.velocity.y = -self.jump_strength
+            self.jump_count += 1
+            
+        
+        
     def player_input(self):
         self.velocity.x = 0
-        if self.move_left:
-            self.velocity.x = -100
-            if not self.sprite.scale_x < 0:
-                self.sprite.scale_x = -self.sprite.scale_x
-        if self.move_right:
-            self.velocity.x = 100
-            if self.sprite.scale_x < 0:
-                self.sprite.scale_x = -self.sprite.scale_x
+        if self.game.left_pressed:
+            self.velocity.x = -3
+            self.facing_left = True
+        if self.game.right_pressed:
+            self.velocity.x = 3
+            self.facing_left = False
+            
         
+    def handle_collision(self, dx, dy):
+        return super().handle_collision(dx, dy)
         
-    
-    def is_on_ground(self):
-        return super().is_on_ground()
-        
-    
     def update(self, dt):
         super().update(dt)
         
-        self.image.height = self.sprite.height
-        
-        # Center the sprite based on the image's position
-        self.sprite.x = self.image.x + self.image.width // 2
-        self.sprite.y = self.image.y + self.image.height // 2
         self.player_input()
+        
+        
         if self.is_on_ground():
             self.jump_count = 0  # Reset jump count when on the ground
-        self.state_manager()
-        self.animation_manager(dt)
+        
+        # Update animation
+        self.animate(dt)
+        
+        self.rect.x += self.velocity.x * dt
+        self.handle_collision(self.velocity.x, 0)
+        self.rect.y += self.velocity.y * dt
+        self.handle_collision(0, self.velocity.y)
+        
+        self.hit_rect.topleft = self.rect.topleft
+        
     
-    def state_manager(self):
+    def animate(self,dt):
+        self.time_since_last_frame += dt
+              
+        if self.time_since_last_frame >= self.frame_duration:
+            self.current_frame += 1
+            self.time_since_last_frame = 0
+        
         if self.velocity.x != 0:
-            self.moving = True
+            self.current_animation = self.run_frames
         else:
-            self.moving = False
+            self.current_animation = self.idle_frames
+        
+        if self.velocity.y < 0:
+            self.current_animation = self.jump_frames
+        elif self.velocity.y > 0:
+            self.current_animation = self.fall_frames
         
         
-        if not self.is_on_ground():
-            if self.velocity.y > 0:
-                self.jumping = True
-                self.falling = False            
-            else:
-                self.jumping = False
-                self.falling = True
+        # Update image based on animation
+        if self.current_frame >= len(self.current_animation):   
+            self.current_frame = 0
+        self.image = self.current_animation[self.current_frame] # Set the current frame
+        
+        if self.facing_left:
+            self.image = pygame.transform.flip(self.image, True, False)
         else:
-            self.jumping = False
-            self.falling = False
-            
-    def animation_manager(self, dt):
-        # print(self.jumping, self.falling, self.moving)
-        
-        if not self.jumping and not self.falling and self.moving:
-            if self.sprite.image != self.run_animation:                
-                self.sprite.image = self.run_animation
-        
-        if not self.moving and not self.jumping and not self.falling:
-            if self.sprite.image != self.idle_animation:
-                self.sprite.image = self.idle_animation
-                
-        if self.jumping:
-            if self.sprite.image != self.jump_animation:
-                self.sprite.image = self.jump_animation
-        
-        if self.falling:
-            if self.sprite.image != self.fall_animation:
-                self.sprite.image = self.fall_animation
+            self.image = pygame.transform.flip(self.image, False, False)
