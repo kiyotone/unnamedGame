@@ -2,10 +2,15 @@ import pygame # type: ignore
 import random
 
 
-class Platform():
-    def __init__(self, x, y, w, h ,game):
+class Platform(pygame.sprite.Sprite):
+    def __init__(self, x, y, w, h ,game , *groups):
+        super().__init__(groups)
         self.image = pygame.Surface((w, h))
-        self.image.fill((255, 255, 255))
+        red = random.randint(0, 255)
+        green = random.randint(0, 255)
+        blue = random.randint(0, 255)
+        self.image.fill((red, green, blue))
+
         self.rect = self.image.get_rect(topleft=(x, y))
         self.game = game
    

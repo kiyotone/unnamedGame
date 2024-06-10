@@ -2,8 +2,8 @@ import pygame
 from Entity import Entity
 
 class Player(Entity):
-    def __init__(self, x: int, y: int, game):
-        super().__init__(x, y, game)
+    def __init__(self, x: int, y: int, game, *groups):
+        super().__init__(x, y, game , groups)
         self.jump_strength = 10  # Jump force
         self.jump_count = 0  # Number of jumps made
         self.jump_pressed = False  # If the jump key is pressed
@@ -26,10 +26,14 @@ class Player(Entity):
         self.current_animation = self.idle_frames
         
         self.velocity = pygame.math.Vector2(0, 0)
+        self.vision_range = 100
         
     def draw(self):
         self.game.window.blit(self.image, self.rect)
         pygame.draw.rect(self.game.window, (0, 255, 0), self.hit_rect, 2)
+        
+        # self.draw_vision()
+        
         
     def load_images(self):
         # Load each image
@@ -62,7 +66,6 @@ class Player(Entity):
         elif self.can_wall_hop and self.is_on_wall():  # Wall hop
             self.velocity.y = -self.jump_strength
             self.velocity.x = -self.velocity.x  # Reverse direction
-            self.jump_count = 1
         elif self.jump_count < 2:  # Double jump
             self.velocity.y = -self.jump_strength
             self.jump_count += 1
@@ -101,6 +104,9 @@ class Player(Entity):
         
         self.hit_rect.topleft = self.rect.topleft
         
+        # self.check_platform_ahead()
+
+   
     
     def animate(self,dt):
         self.time_since_last_frame += dt
@@ -129,3 +135,4 @@ class Player(Entity):
             self.image = pygame.transform.flip(self.image, True, False)
         else:
             self.image = pygame.transform.flip(self.image, False, False)
+

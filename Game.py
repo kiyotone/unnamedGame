@@ -4,44 +4,69 @@ import random
 from Platform import Platform
 from Enemy import Enemy
 from Player import Player
+from Camera import Camera
 import os
 
 class Game:
-    def __init__(self):
+    def __init__(self,width, height):
         self.time_passed = 0
-        self.window = pygame.display.set_mode((800, 600) )
+        self.width = width
+        self.height = height
+        self.window = pygame.display.set_mode((self.width, self.height) )
         self.platform_array = []
-        self.entities = []
-        self.player = Player(400, 300, self)
+        self.obstacle_group = pygame.sprite.Group()
+        self.entity_group  = pygame.sprite.Group()
+        self.player = Player(400, 300, self , self.entity_group)
+        
         self.left_pressed = False
         self.right_pressed = False
         self.space_pressed = False
         
         self.platform_pattern = [
-    "########################",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "#                      #",
-    "########################"
-]
+    "###############################################",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "#                                             #",
+    "###############################################"]
+        self.camera = Camera(self,len(self.platform_pattern[0]*32) , len(self.platform_pattern*32))
         
     def generate_entities(self):
-        for i in range(1):
-            x = random.randint(0, 750)  # Ensure platforms fit within the window width
-            y = random.randint(0, 590)
+        for i in range(59):
+            x = random.randint(0, self.platform_pattern[0]*32)  # Ensure platforms fit within the window width
+            y = random.randint(0, self.platform_pattern*32)
             enemy = Enemy(x, y, self)
             self.entities.append(enemy)
 
@@ -55,26 +80,22 @@ class Game:
                     platform_x = x * platform_size
                     platform_y = y * platform_size
                     # Create a platform object and add it to the platform_array
-                    platform = Platform(platform_x, platform_y, platform_size, platform_size, self)
+                    platform = Platform(platform_x, platform_y, platform_size, platform_size, self, self.obstacle_group)
                     self.platform_array.append(platform)
         
-        for i in range(10):
-            x = random.randint(0, 750)
-            y = random.randint(0, 590)
+        for i in range(30):
+            x = random.randint(0, len(self.platform_pattern[0]*32))  # Ensure platforms fit within the window width
+            y = random.randint(0, len(self.platform_pattern*32))
             width = random.randint(32, 256)
-            platform = Platform(x, y, width, 32, self)
+            platform = Platform(x, y, width, 32, self , self.obstacle_group)
             self.platform_array.append(platform)
             
 
     def draw(self):
         self.window.fill((0, 0, 0))
-        self.player.draw()
-        for platform in self.platform_array:
-            platform.draw()
+        self.camera.draw(self.window, self.obstacle_group)
+        self.camera.draw(self.window, self.entity_group)
         
-        for enemy in self.entities:
-            enemy.draw()
-    
     def update(self, dt):
         
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -82,8 +103,9 @@ class Game:
         
         self.time_passed += dt
         self.player.update(dt)
-        for enemy in self.entities:
-            enemy.update(dt)
+        self.camera.update(self.player)
+        # for enemy in self.entities:
+        #     enemy.update(dt)
     
     def get_events(self):
         for event in pygame.event.get():
@@ -107,7 +129,7 @@ class Game:
     
     def run(self):
         self.generate_platforms()
-        self.generate_entities()
+        # self.generate_entities()
         
         clock = pygame.time.Clock()
         while True:

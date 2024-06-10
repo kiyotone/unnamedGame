@@ -18,18 +18,16 @@ class Enemy(Entity):
         self.image = pygame.Surface((20, 20))  # Create a surface for the enemy's image
         self.image.fill((0, 255, 0))  # Fill the surface with green color
         self.image.set_colorkey((0, 0, 0))  # Set black color as transparent
-
+        self.facing_left = False
+        self.velocity.x = 1
         # Create the vision circle surface
         
     def draw(self):
         # Draw the enemy image
         self.game.window.blit(self.image, self.rect.topleft)
 
-        vision_circle = pygame.Surface((self.vision_range * 2, self.vision_range * 2), pygame.SRCALPHA)
-        pygame.draw.circle(vision_circle, (255, 0, 0, 100), (self.vision_range, self.vision_range), self.vision_range)
-
         # Draw the vision circle
-        self.game.window.blit(vision_circle, vision_circle.get_rect(center=self.rect.center))
+        self.draw_vision()
 
 
     def update(self, dt):
@@ -41,19 +39,23 @@ class Enemy(Entity):
         else:
             self.facing_left = False
             
-        if self.game.time_passed % 1 < 0.1:
+        if self.game.time_passed % 1.3 < 0.1:
             if self.is_within_vision(self.game.player.rect):
-                if self.rect.x < self.game.player.rect.x:
-                    self.velocity.x = 1
+                if self.velocity.x < 0:
+                    self.velocity.x = -1            
                 else:
-                    self.velocity.x = -1
+                    self.velocity.x = 1                
             else:
-                self.velocity.x = 1 * random.randint(-1, 1)
+                self.velocity.x = self.velocity.x * random.choice([-1, 1])
+                
+                    
+                        
         
         self.rect.x += self.velocity.x * dt
-        # print(self.is_within_vision(self.game.player.rect))
-
-
+        
+        self.facing_left = self.velocity.x < 0
+                        
+                
     def is_within_vision(self, rect):
         # Calculate the closest point on the rectangle to the enemy's center
         closest_x = max(rect.left, min(self.rect.centerx, rect.right))
@@ -62,3 +64,4 @@ class Enemy(Entity):
         # Calculate the distance from the closest point to the enemy's center
         distance = math.hypot(self.rect.centerx - closest_x, self.rect.centery - closest_y)
         return distance < self.vision_range
+    
